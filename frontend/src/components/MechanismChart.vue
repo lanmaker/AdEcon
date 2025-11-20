@@ -1,9 +1,9 @@
 <template>
-  <div ref="chartRef" style="width: 100%; height: 400px;"></div>
+  <div ref="chartRef" style="width: 100%; height: 300px;"></div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, defineProps } from 'vue';
 import * as echarts from 'echarts';
 
 const props = defineProps({
@@ -20,6 +20,11 @@ const initChart = () => {
   if (chartRef.value) {
     chartInstance = echarts.init(chartRef.value);
     updateChart();
+    
+    // Handle resize
+    window.addEventListener('resize', () => {
+      chartInstance && chartInstance.resize();
+    });
   }
 };
 
@@ -27,63 +32,84 @@ const updateChart = () => {
   if (!chartInstance) return;
 
   const ads = props.results.map(r => r.ad_id);
-  const bids = props.results.map(r => r.bid);
   const costs = props.results.map(r => r.cost);
   const surplus = props.results.map(r => r.surplus);
 
   const option = {
-    title: {
-      text: 'Auction Dynamics (Bid vs Cost vs Surplus)'
-    },
+    color: ['#f43f5e', '#3b82f6'], // Rose-500, Blue-500
     tooltip: {
       trigger: 'axis',
       axisPointer: {
         type: 'shadow'
+      },
+      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+      borderColor: '#e2e8f0',
+      textStyle: {
+        color: '#1e293b'
       }
     },
     legend: {
-      data: ['Cost', 'Surplus']
+      data: ['Cost (CPC)', 'Surplus'],
+      bottom: 0,
+      textStyle: {
+        color: '#64748b'
+      }
     },
     grid: {
       left: '3%',
       right: '4%',
-      bottom: '3%',
+      bottom: '10%',
+      top: '3%',
       containLabel: true
     },
     xAxis: {
       type: 'category',
-      data: ads
+      data: ads,
+      axisLine: {
+        lineStyle: {
+          color: '#cbd5e1'
+        }
+      },
+      axisLabel: {
+        color: '#64748b'
+      },
+      axisTick: {
+        show: false
+      }
     },
     yAxis: {
       type: 'value',
-      name: 'Price ($)'
+      splitLine: {
+        lineStyle: {
+          color: '#f1f5f9',
+          type: 'dashed'
+        }
+      },
+      axisLabel: {
+        color: '#64748b',
+        formatter: '${value}'
+      }
     },
     series: [
       {
-        name: 'Cost',
+        name: 'Cost (CPC)',
         type: 'bar',
         stack: 'total',
-        emphasis: {
-          focus: 'series'
-        },
-        data: costs,
+        barWidth: '40%',
         itemStyle: {
-          color: '#f56c6c'
-        }
+          borderRadius: [0, 0, 4, 4] // Bottom rounded
+        },
+        data: costs
       },
       {
         name: 'Surplus',
         type: 'bar',
         stack: 'total',
-        emphasis: {
-          focus: 'series'
-        },
-        data: surplus,
         itemStyle: {
-          color: '#409eff'
-        }
+          borderRadius: [4, 4, 0, 0] // Top rounded
+        },
+        data: surplus
       }
-      // Note: Bid is Cost + Surplus, so stacking them equals Bid (roughly, if we ignore rationality clamp)
     ]
   };
 

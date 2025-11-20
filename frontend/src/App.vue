@@ -1,65 +1,98 @@
 <template>
-  <div class="common-layout">
-    <el-container>
-      <el-header>
-        <h1>AdEcon: Real-time Advertising Auction</h1>
-      </el-header>
-      <el-main>
-        <el-row :gutter="20">
-          <!-- Configuration Panel -->
-          <el-col :span="6">
-            <el-card>
-              <template #header>
-                <div class="card-header">
-                  <span>Configuration</span>
-                </div>
-              </template>
-              <el-form label-position="top">
-                <el-form-item label="User ID">
-                  <el-input v-model="userId" placeholder="dev_412" />
-                </el-form-item>
-                <el-form-item label="Mechanism">
-                  <el-radio-group v-model="mechanism">
-                    <el-radio-button label="gsp">GSP</el-radio-button>
-                    <el-radio-button label="vcg">VCG</el-radio-button>
-                  </el-radio-group>
-                </el-form-item>
-                <el-divider>Candidates</el-divider>
-                <div v-for="(cand, index) in candidates" :key="index" class="candidate-row">
-                  <el-input v-model="cand.ad_id" placeholder="Ad ID" style="width: 100px; margin-right: 5px;" />
-                  <el-input-number v-model="cand.bid" :min="0" :step="0.1" style="width: 120px;" />
-                  <el-button type="danger" icon="Delete" circle size="small" @click="removeCandidate(index)" style="margin-left: 5px;" />
-                </div>
-                <el-button type="primary" plain style="width: 100%; margin-top: 10px;" @click="addCandidate">Add Candidate</el-button>
-                
-                <el-divider />
-                <el-button type="success" style="width: 100%;" @click="runAuction" :loading="loading">Run Auction</el-button>
-              </el-form>
-            </el-card>
-          </el-col>
+  <div class="min-h-screen bg-slate-50 p-8 font-sans text-slate-800">
+    
+    <div class="mx-auto max-w-6xl">
+      <header class="mb-8 text-center">
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900">AdEcon Dashboard</h1>
+        <p class="text-slate-500">Real-time Auction Simulation & Analytics</p>
+      </header>
+
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        
+        <!-- Configuration Panel -->
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm h-fit">
+          <h2 class="mb-4 text-lg font-semibold">Settings</h2>
           
-          <!-- Results Panel -->
-          <el-col :span="18">
-            <div v-if="results.length > 0">
-              <el-row :gutter="20">
-                <el-col :span="24">
-                  <el-card class="box-card">
-                    <MechanismChart :results="results" />
-                  </el-card>
-                </el-col>
-              </el-row>
-              <el-divider />
-              <el-row :gutter="20">
-                <el-col :span="8" v-for="res in results" :key="res.ad_id">
-                  <AdCard :ad="res" />
-                </el-col>
-              </el-row>
+          <div class="mb-4">
+            <label class="mb-1 block text-sm font-medium text-slate-600">User ID</label>
+            <input 
+              v-model="userId" 
+              class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none"
+              placeholder="e.g. user_123"
+            />
+          </div>
+
+          <div class="mb-6">
+            <label class="mb-1 block text-sm font-medium text-slate-600">Mechanism</label>
+            <div class="flex rounded-lg bg-slate-100 p-1">
+              <button 
+                @click="mechanism='gsp'"
+                :class="['flex-1 rounded-md py-1.5 text-sm font-medium transition-all', mechanism==='gsp' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']"
+              >
+                GSP
+              </button>
+              <button 
+                @click="mechanism='vcg'"
+                :class="['flex-1 rounded-md py-1.5 text-sm font-medium transition-all', mechanism==='vcg' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']"
+              >
+                VCG
+              </button>
             </div>
-            <el-empty v-else description="Run auction to see results" />
-          </el-col>
-        </el-row>
-      </el-main>
-    </el-container>
+          </div>
+
+          <div class="mb-4">
+            <label class="mb-1 block text-sm font-medium text-slate-600">Candidates</label>
+            <div v-for="(cand, index) in candidates" :key="index" class="flex items-center gap-2 mb-2">
+              <input v-model="cand.ad_id" class="w-24 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm outline-none focus:border-indigo-500" placeholder="Ad ID" />
+              <input v-model.number="cand.bid" type="number" step="0.1" class="w-20 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm outline-none focus:border-indigo-500" placeholder="Bid" />
+              <button @click="removeCandidate(index)" class="text-slate-400 hover:text-red-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+            </div>
+            <button @click="addCandidate" class="mt-2 w-full rounded-lg border border-dashed border-slate-300 py-2 text-sm text-slate-500 hover:border-indigo-500 hover:text-indigo-600 transition-colors">
+              + Add Candidate
+            </button>
+          </div>
+
+          <button 
+            @click="runAuction" 
+            :disabled="loading"
+            class="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-indigo-500 transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{ loading ? 'Running...' : 'Run Auction Simulation' }}
+          </button>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="lg:col-span-2 space-y-6">
+          <div v-if="results.length > 0">
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-lg font-semibold">Auction Dynamics</h2>
+                <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">Live</span>
+              </div>
+              <MechanismChart :results="results" />
+            </div>
+            
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 mt-6">
+               <div v-for="res in results" :key="res.ad_id">
+                 <AdCard :ad="res" />
+               </div>
+            </div>
+          </div>
+          
+          <div v-else class="flex h-64 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-slate-400">
+            <div class="text-center">
+              <p>No results yet.</p>
+              <p class="text-sm">Run the simulation to see auction outcomes.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </div>
 </template>
 
@@ -109,17 +142,5 @@ const runAuction = async () => {
 </script>
 
 <style>
-.common-layout {
-  padding: 20px;
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
-}
-h1 {
-  text-align: center;
-  color: #303133;
-}
-.candidate-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-}
+/* Global styles are now in style.css */
 </style>
