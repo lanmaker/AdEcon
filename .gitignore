@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.DS_Store
+.env
+venv/
+
+# Data
+data/*.csv
+data/*.parquet
+feature_store/data/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Model
+model_training/*.onnx
