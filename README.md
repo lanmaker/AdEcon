@@ -1,77 +1,86 @@
-# AdEcon: Advertising Economy Simulation
+# AdEcon: Real-time Advertising Auction & Recommendation System
 
-AdEcon is a platform for simulating and analyzing advertising economies. It pairs an auction-driven FastAPI backend with a Vue/Vite frontend, Feast feature store definitions, and DeepFM training utilities.
+[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-teal.svg)](https://fastapi.tiangolo.com/)
+[![Vue.js](https://img.shields.io/badge/Frontend-Vue_3-green.svg)](https://vuejs.org/)
+[![Feast](https://img.shields.io/badge/Feature_Store-Feast-orange.svg)](https://docs.feast.dev/)
+[![Docker](https://img.shields.io/badge/Deployment-Docker-blue.svg)](https://www.docker.com/)
 
-## Project Structure
-- **backend/** – FastAPI service with auction mechanisms (GSP/VCG) and ONNX inference.
-- **frontend/** – Vue 3 + Vite UI for configuring and visualizing auctions.
-- **feature_store/** – Feast feature definitions and local registry/online store artifacts.
-- **model_training/** – DeepFM training/export scripts and model artifacts.
-- **data/** – Raw/processed datasets plus generation and preprocess scripts.
+**AdEcon** is a full-stack ML systems project that simulates a real-time ad economy. It pairs a DeepFM CTR prediction model with a pluggable auction engine to highlight the intersection of Computational Economics and ML Engineering.
 
-## Prerequisites
-- Docker Desktop (or Docker Engine) with Compose
-- Optional for manual development: Python 3.9+, Node.js 20+, npm
+![Dashboard Screenshot](docs/dashboard_screenshot.png) <!-- Replace with your actual UI screenshot -->
 
-## Quick Start (Docker Compose)
+## 🚀 Key Features
+- **Full-Stack MLE Architecture**: End-to-end path from feature definitions to model serving and real-time visualization.
+- **Training–Serving Consistency**: Feature retrieval via **Feast** for point-in-time correctness across training and online inference.
+- **Auction Mechanisms**: Pluggable **GSP** and **VCG** auctions with cost/revenue/surplus visualization.
+- **Real-time Inference**: ONNX-exported DeepFM served through **FastAPI** with low-latency inference.
+- **Interactive Dashboard**: Modern **Vue 3 + Vite** UI to configure candidates, switch mechanisms, and inspect outcomes.
+
+## 🛠️ Project Structure
+- `backend/` – FastAPI service with auction logic and ONNX inference.
+- `frontend/` – Vue 3 + Vite dashboard for simulation and visualization.
+- `feature_store/` – Feast configs, feature definitions, and local registry/online store.
+- `model_training/` – DeepFM training/export scripts and model artifacts.
+- `data/` – Raw/processed datasets plus generation/preprocess scripts.
+
+## 🏁 Quick Start (Docker Compose)
+Prerequisite: Docker Desktop (or Docker Engine) with Compose.
+
 ```bash
-git clone <repository-url>
+git clone https://github.com/lanmaker/AdEcon.git
 cd AdEcon
 docker compose up --build -d
 ```
+
 Access:
-- Frontend: http://localhost
+- Frontend dashboard: http://localhost (if port 80 is taken, adjust the mapping in `docker-compose.yml`, e.g., `8080:80`)
 - Backend API: http://localhost:8000
-- API docs: http://localhost:8000/docs
+- Interactive API docs (Swagger): http://localhost:8000/docs
 
 Stop the stack:
 ```bash
 docker compose down
 ```
 
-## Manual Local Development
+## 💻 Manual Local Development
 ### Backend
 ```bash
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+
 cd feature_store
 feast apply
 feast materialize-incremental "$(date +%Y-%m-%d)"
 cd ..
+
 export PYTHONPATH=$PYTHONPATH:.
-python -m backend.main
+python -m backend.main  # runs at http://localhost:8000 (docs at /docs)
 ```
-The backend serves on http://localhost:8000 (docs at /docs).
 
 ### Frontend
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev  # Vite dev server at http://localhost:5173
 ```
-Vite dev server defaults to http://localhost:5173.
 
-## Cloud / Container Deployment
-Build and push images to your registry:
+## 📦 Cloud / Container Deployment
+Build and push images to your registry (ECR/GCR/Docker Hub):
 ```bash
 docker build -t <registry>/adecon-backend -f backend/Dockerfile .
 docker build -t <registry>/adecon-frontend -f frontend/Dockerfile .
 docker push <registry>/adecon-backend
 docker push <registry>/adecon-frontend
 ```
-Run on ECS, Cloud Run, Azure Container Apps, etc., mapping:
-- Backend: expose port 8000
-- Frontend: expose port 80
+Run on ECS, Cloud Run, Azure Container Apps, etc., exposing port 8000 for the backend and port 80 for the frontend.
 
-### Feature Store considerations
-The default Feast setup uses local SQLite for the registry/online store. For production/replicas, update `feature_store/feature_store.yaml` to point to a remote registry and online store (e.g., S3/GCS + Redis/DynamoDB/Postgres) and bake or mount updated configs into the backend image.
+**Feature store in production:** Update `feature_store/feature_store.yaml` to use remote registry/online stores (e.g., S3/GCS + Redis/Dynamo/Postgres) for multi-replica consistency.  
+**Model artifacts:** `model_training/ad_model.onnx` and `model_training/feature_mapping.json` are baked/mounted; in production, version them (MLflow/DVC) and bake or fetch at runtime.
 
-## Development Notes
-- Backend mounts `feature_store` and `model_training` in the container for access to registry and ONNX artifacts.
-- Frontend calls the backend at `http://localhost:8000` (see `frontend/src/App.vue`).
-- Model artifacts live in `model_training/ad_model.onnx` and `model_training/feature_mapping.json`.
-
-## Maintenance
-- Clean generated artifacts: `rm -rf frontend/node_modules **/__pycache__ .DS_Store feature_store/data/*.db feature_store/data/*.parquet`
-- Rebuild containers after dependency changes: `docker compose build --no-cache`
+## 🧹 Maintenance
+Clean generated artifacts (use with care):
+```bash
+rm -rf frontend/node_modules **/__pycache__ .DS_Store feature_store/data/*.db feature_store/data/*.parquet
+```
