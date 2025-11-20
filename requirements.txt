@@ -5,4 +5,4 @@ feast
 pandas
 numpy
 scikit-learn
-torch
+torch==2.8.0+cpu
