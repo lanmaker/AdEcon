@@ -37,26 +37,16 @@ const updateChart = () => {
 
   const option = {
     backgroundColor: 'transparent',
-    textStyle: { color: '#cbd5e1' },
-    color: [
-      new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-        { offset: 0, color: '#38bdf8' },
-        { offset: 1, color: '#6366f1' }
-      ]),
-      new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-        { offset: 0, color: '#a855f7' },
-        { offset: 1, color: '#22d3ee' }
-      ])
-    ],
+    textStyle: { color: '#475569' },
+    color: ['#6366f1', '#cbd5e1'],
     tooltip: {
       trigger: 'axis',
       axisPointer: {
-        type: 'shadow',
-        shadowStyle: { color: 'rgba(59,130,246,0.08)' }
+        type: 'shadow'
       },
-      backgroundColor: 'rgba(15,23,42,0.9)',
-      borderColor: '#334155',
-      textStyle: { color: '#e2e8f0' }
+      backgroundColor: 'rgba(255,255,255,0.95)',
+      borderColor: '#e2e8f0',
+      textStyle: { color: '#1f2937' }
     },
     legend: {
       data: ['Cost (CPC)', 'Surplus'],
@@ -73,14 +63,14 @@ const updateChart = () => {
     xAxis: {
       type: 'category',
       data: ads,
-      axisLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } },
-      axisLabel: { color: '#cbd5e1' },
+      axisLine: { show: false },
+      axisLabel: { color: '#64748b' },
       axisTick: { show: false }
     },
     yAxis: {
       type: 'value',
-      splitLine: { lineStyle: { color: 'rgba(255,255,255,0.07)', type: 'dashed' } },
-      axisLabel: { color: '#cbd5e1', formatter: '${value}' }
+      splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
+      axisLabel: { color: '#94a3b8', formatter: '${value}' }
     },
     series: [
       {
@@ -88,16 +78,14 @@ const updateChart = () => {
         type: 'bar',
         stack: 'total',
         barWidth: '40%',
-        itemStyle: { borderRadius: [4, 4, 2, 2] },
-        emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(56,189,248,0.35)' } },
+        itemStyle: { borderRadius: [4, 4, 0, 0] },
         data: costs
       },
       {
         name: 'Surplus',
         type: 'bar',
         stack: 'total',
-        itemStyle: { borderRadius: [10, 10, 4, 4] },
-        emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(168,85,247,0.35)' } },
+        itemStyle: { borderRadius: [4, 4, 0, 0] },
         data: surplus
       }
     ]

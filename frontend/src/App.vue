@@ -1,94 +1,78 @@
 <template>
-  <div class="min-h-screen bg-[#020617] text-slate-100 relative overflow-hidden selection:bg-blue-500 selection:text-white">
-    <!-- Aurora glows -->
-    <div class="pointer-events-none fixed top-[-6rem] left-1/4 h-96 w-96 rounded-full bg-blue-500/25 blur-[140px]"></div>
-    <div class="pointer-events-none fixed bottom-[-6rem] right-1/4 h-96 w-96 rounded-full bg-purple-500/25 blur-[140px]"></div>
-
-    <div class="relative z-10 mx-auto max-w-7xl px-6 py-10">
-      <header class="mb-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+  <div class="min-h-screen bg-gray-50 font-sans text-slate-600 selection:bg-indigo-100 selection:text-indigo-700">
+    <div class="mx-auto max-w-6xl px-6 py-10">
+      <header class="mb-10 flex flex-col gap-4 border-b border-gray-200 pb-6 md:flex-row md:items-end md:justify-between">
         <div>
-          <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Real-time auction lab</p>
-          <h1 class="bg-gradient-to-r from-blue-400 via-cyan-300 to-violet-400 bg-clip-text text-4xl font-bold tracking-tight text-transparent">
-            AdEcon Dashboard
-          </h1>
-          <p class="mt-2 text-slate-400">Run GSP/VCG simulations with ONNX inference and see revenue dynamics instantly.</p>
+          <h1 class="text-3xl font-semibold tracking-tight text-slate-900">AdEcon Simulation</h1>
+          <p class="mt-2 text-sm text-slate-500">Real-time advertising auction dynamics & revenue analysis.</p>
         </div>
-        <div class="flex items-center gap-3">
-          <span class="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-cyan-300 border border-white/10 backdrop-blur-md shadow-lg shadow-cyan-500/10">
-            DeepFM · ONNX · Feast
+        <div class="flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600">
+          <span class="relative flex h-2 w-2">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
           </span>
-          <div class="flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-sm text-green-300 border border-white/10 backdrop-blur-md shadow-lg shadow-emerald-500/10">
-            <span class="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
-            System online
-          </div>
+          Live connected
         </div>
       </header>
 
-      <div class="grid grid-cols-12 gap-6">
-        <!-- Configuration Panel -->
-        <section class="col-span-12 lg:col-span-4 space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-xl">
-          <div class="flex items-center justify-between">
-            <h2 class="text-xl font-semibold text-slate-50 flex items-center gap-2">
-              <span class="text-blue-300">⚙️</span> Configuration
-            </h2>
-            <span class="text-xs text-slate-400">Interactive · Live</span>
-          </div>
+      <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <!-- Configuration -->
+        <section class="space-y-6 rounded-xl border border-gray-100 bg-white p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] lg:col-span-4">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-900">Configuration</h2>
 
-          <div class="space-y-4">
+          <div class="space-y-5">
             <div>
-              <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">User ID</label>
+              <label class="mb-1.5 block text-xs font-medium text-slate-500">User identity</label>
               <input
                 v-model="userId"
-                class="mt-2 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/30"
-                placeholder="dev_412"
+                class="w-full rounded-lg border-0 bg-gray-50 px-4 py-3 text-sm text-slate-900 ring-1 ring-inset ring-gray-200 transition-all placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-indigo-600"
+                placeholder="Identifier..."
               />
             </div>
 
             <div>
-              <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Mechanism</label>
-              <div class="mt-2 flex rounded-2xl bg-black/30 p-1.5 border border-white/10">
+              <label class="mb-1.5 block text-xs font-medium text-slate-500">Auction mechanism</label>
+              <div class="grid grid-cols-2 gap-1 rounded-lg bg-gray-100/60 p-1">
                 <button
                   @click="mechanism='gsp'"
-                  :class="['flex-1 rounded-xl py-2 text-sm font-semibold transition-all duration-300', mechanism==='gsp' ? 'bg-white/10 text-white shadow-lg shadow-blue-500/20 border border-white/5' : 'text-slate-500 hover:text-slate-300']">
-                  GSP
+                  :class="['rounded-md py-2 text-xs font-medium transition-all', mechanism==='gsp' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-gray-200' : 'text-slate-500 hover:text-slate-700']">
+                  GSP (Second Price)
                 </button>
                 <button
                   @click="mechanism='vcg'"
-                  :class="['flex-1 rounded-xl py-2 text-sm font-semibold transition-all duration-300', mechanism==='vcg' ? 'bg-white/10 text-white shadow-lg shadow-violet-500/20 border border-white/5' : 'text-slate-500 hover:text-slate-300']">
-                  VCG
+                  :class="['rounded-md py-2 text-xs font-medium transition-all', mechanism==='vcg' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-gray-200' : 'text-slate-500 hover:text-slate-700']">
+                  VCG (Welfare)
                 </button>
               </div>
             </div>
 
             <div class="space-y-3">
-              <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <div class="flex items-center justify-between text-xs font-medium text-slate-500">
                 <span>Candidates</span>
-                <span class="text-slate-500">{{ candidates.length }} ads</span>
+                <span class="text-slate-400">{{ candidates.length }} ads</span>
               </div>
 
               <div class="space-y-2">
-                <div v-for="(cand, index) in candidates" :key="index" class="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 px-3 py-3 backdrop-blur-md">
+                <div v-for="(cand, index) in candidates" :key="index" class="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-3">
                   <input
                     v-model="cand.ad_id"
-                    class="w-28 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none transition focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30"
+                    class="w-28 rounded-md border-0 bg-white px-3 py-2 text-sm text-slate-900 ring-1 ring-gray-200 transition focus:ring-2 focus:ring-indigo-500"
                     placeholder="Ad ID"
                   />
                   <input
                     v-model.number="cand.bid"
                     type="number"
                     step="0.1"
-                    class="w-24 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none transition focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30"
+                    class="w-24 rounded-md border-0 bg-white px-3 py-2 text-sm text-slate-900 ring-1 ring-gray-200 transition focus:ring-2 focus:ring-indigo-500"
                     placeholder="Bid"
                   />
-                  <button @click="removeCandidate(index)" class="ml-auto text-slate-500 transition hover:text-red-400">
-                    ✕
-                  </button>
+                  <button @click="removeCandidate(index)" class="ml-auto text-slate-400 transition hover:text-red-500">✕</button>
                 </div>
               </div>
 
               <button
                 @click="addCandidate"
-                class="w-full rounded-xl border border-dashed border-white/20 bg-white/5 py-2 text-sm font-semibold text-slate-200 transition hover:border-blue-400/50 hover:text-white">
+                class="w-full rounded-lg border border-dashed border-gray-200 bg-white py-2 text-sm font-medium text-slate-600 transition hover:border-indigo-200 hover:text-indigo-700">
                 + Add candidate
               </button>
             </div>
@@ -96,21 +80,27 @@
             <button
               @click="runAuction"
               :disabled="loading"
-              class="w-full rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 py-3 text-sm font-bold text-white shadow-xl shadow-blue-900/30 transition hover:from-blue-500 hover:to-purple-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60">
-              {{ loading ? 'Running simulation...' : 'Run auction simulation' }}
+              class="group relative w-full overflow-hidden rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800 hover:shadow-lg active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60">
+              <span class="relative z-10 flex items-center justify-center gap-2">
+                {{ loading ? 'Running…' : 'Run auction' }}
+                <svg class="h-4 w-4 text-slate-300 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </span>
             </button>
           </div>
         </section>
 
-        <!-- Results Panel -->
-        <section class="col-span-12 space-y-6 lg:col-span-8">
+        <!-- Results -->
+        <section class="space-y-6 lg:col-span-8">
           <div v-if="results.length > 0" class="space-y-6">
-            <div class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-xl">
-              <div class="mb-4 flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-slate-50">Auction dynamics</h2>
-                <span class="rounded-full border border-emerald-400/30 bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-200 backdrop-blur-md">
-                  Live
-                </span>
+            <div class="rounded-xl border border-gray-100 bg-white p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+              <div class="mb-6 flex items-center justify-between">
+                <h3 class="text-base font-medium text-slate-900">Auction dynamics</h3>
+                <div class="flex gap-4 text-xs text-slate-500">
+                  <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-indigo-500"></span>Cost (CPC)</span>
+                  <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-slate-300"></span>Surplus</span>
+                </div>
               </div>
               <MechanismChart :results="results" />
             </div>
@@ -122,9 +112,9 @@
             </div>
           </div>
 
-          <div v-else class="flex h-80 flex-col items-center justify-center rounded-3xl border border-dashed border-white/15 bg-white/5 text-slate-400 backdrop-blur-xl">
-            <p class="text-lg text-slate-200">No results yet</p>
-            <p class="text-sm text-slate-500">Run the simulation to see auction outcomes.</p>
+          <div v-else class="flex h-72 flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white text-slate-500">
+            <p class="text-base font-medium text-slate-700">No results yet</p>
+            <p class="text-sm mt-1">Run the simulation to see auction outcomes.</p>
           </div>
         </section>
       </div>
