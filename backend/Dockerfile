@@ -9,19 +9,23 @@ RUN apt-get update && apt-get install -y \
 
 # Install Python dependencies
 COPY requirements.txt .
-# We need to create requirements.txt first or list them here
-# Using inline pip install for simplicity of this file, but better to use requirements.txt
-RUN pip install --no-cache-dir \
-    fastapi uvicorn onnxruntime feast pandas numpy scikit-learn torch
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend code
+# Copy application code and artifacts
 COPY backend /app/backend
 COPY feature_store /app/feature_store
 COPY model_training /app/model_training
+COPY data /app/data
+
+ENV FEATURE_REPO_PATH=/app/feature_store \
+    MODEL_PATH=/app/model_training/ad_model.onnx \
+    FEATURE_MAPPING_PATH=/app/model_training/feature_mapping.json \
+    PROCESSED_DATA_PATH=/app/data/processed_data.parquet \
+    FEAST_USAGE=False
 
 # Expose port
 EXPOSE 8000
 
 # Run command
-# We need to be in /app to run python -m backend.main
-CMD ["python", "-m", "backend.main"]
+# Apply/materialize Feast repo then start API
+CMD ["/bin/sh", "-c", "feast -c ${FEATURE_REPO_PATH} apply && feast -c ${FEATURE_REPO_PATH} materialize-incremental \"$(date +%Y-%m-%d)\" && python -m backend.main"]

@@ -1,26 +1,47 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import onnxruntime as ort
 import numpy as np
-import pandas as pd
 import json
 import os
+from pathlib import Path
 from feast import FeatureStore
 from backend.auction_engine.mechanism import GSP, VCG
 
 app = FastAPI(title="AdEcon Real-time Auction")
 
+# Paths and configuration
+BASE_DIR = Path(__file__).resolve().parent.parent
+FEATURE_REPO_PATH = os.getenv("FEATURE_REPO_PATH", str(BASE_DIR / "feature_store"))
+MODEL_PATH = os.getenv("MODEL_PATH", str(BASE_DIR / "model_training" / "ad_model.onnx"))
+FEATURE_MAPPING_PATH = os.getenv(
+    "FEATURE_MAPPING_PATH", str(BASE_DIR / "model_training" / "feature_mapping.json")
+)
+ALLOWED_ORIGINS = [
+    origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "*").split(",")
+]
+
+# CORS for browser clients
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Load Resources
 print("Loading resources...")
 # 1. Feature Store
-fs = FeatureStore(repo_path="feature_store")
+fs = FeatureStore(repo_path=FEATURE_REPO_PATH)
 
 # 2. ONNX Model
-ort_session = ort.InferenceSession("model_training/ad_model.onnx")
+ort_session = ort.InferenceSession(MODEL_PATH)
 
 # 3. Feature Mappings
-with open("model_training/feature_mapping.json", "r") as f:
+with open(FEATURE_MAPPING_PATH, "r") as f:
     feature_mapping = json.load(f)
 
 # Define Request Models
@@ -135,6 +156,10 @@ async def recommend(request: RecommendRequest):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/healthz")
+async def health():
+    return {"status": "ok"}
 
 if __name__ == "__main__":
     import uvicorn

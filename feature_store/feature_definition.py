@@ -1,16 +1,22 @@
+import os
 from datetime import timedelta
+from pathlib import Path
 from feast import Entity, Field, FeatureView, FileSource, ValueType
 from feast.types import Int64, String, Float32
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+# Allow overriding via env for containerized deployments
+processed_data_path = os.getenv(
+    "PROCESSED_DATA_PATH", str(BASE_DIR / "data" / "processed_data.parquet")
+)
 
 # Define Entities
 user = Entity(name="user_id", join_keys=["user_id"])
 ad = Entity(name="ad_id", join_keys=["ad_id"])
 
-# Define Data Source
-# Note: In a real production setup, this might be a BigQuerySource or similar.
-# Here we use the local parquet file generated in Phase 1.
+# Define Data Source (local file store for demo)
 offline_source = FileSource(
-    path="/Users/dingshen/Desktop/ProjeKCt/AdEcon/data/processed_data.parquet",
+    path=processed_data_path,
     timestamp_field="event_timestamp",
 )
 
