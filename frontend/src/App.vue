@@ -11,23 +11,31 @@
           <p class="mt-1 flex items-center gap-2 text-sm text-slate-500">
             Real-time auction dynamics & revenue analysis
             <span class="h-1 w-1 rounded-full bg-slate-300"></span>
-            <span class="font-mono text-xs text-slate-400">v2.4.0-stable</span>
+            <span class="font-mono text-xs text-slate-400">v2</span>
           </p>
         </div>
 
         <div class="flex flex-wrap gap-2">
-          <div class="hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-emerald-600 shadow-sm md:flex">
-            <span class="flex h-2 w-2 items-center justify-center">
-              <span class="h-1.5 w-1.5 animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-            </span>
-            Feast store online
+          <div
+            class="hidden items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium shadow-sm md:flex"
+            :class="backendReady ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'"
+          >
+            <span class="h-1.5 w-1.5 rounded-full" :class="backendReady ? 'bg-emerald-400' : 'bg-rose-400'"></span>
+            {{ backendStatusLabel }}
           </div>
           <div class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm">
             <span class="text-slate-400">Model:</span>
-            <span class="font-mono text-slate-800">DeepFM_v3.onnx</span>
+            <span class="font-mono text-slate-800">{{ modelStatusLabel }}</span>
           </div>
         </div>
       </header>
+
+      <div
+        v-if="errorMessage"
+        class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+      >
+        {{ errorMessage }}
+      </div>
 
       <!-- Metrics strip -->
       <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -45,7 +53,7 @@
         </div>
         <div class="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Latency</p>
-          <p class="mt-2 text-xl font-semibold text-slate-900">12ms</p>
+          <p class="mt-2 text-xl font-semibold text-slate-900">{{ latencyLabel }}</p>
         </div>
       </div>
 
@@ -190,7 +198,8 @@
           </div>
 
           <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <table class="w-full text-left text-sm">
+            <div class="overflow-x-auto">
+              <table class="min-w-[680px] w-full text-left text-sm">
               <thead class="border-b border-slate-100 bg-slate-50 text-xs uppercase text-slate-500">
                 <tr>
                   <th class="px-6 py-3 font-semibold">Ad candidate</th>
@@ -238,7 +247,8 @@
                   </td>
                 </tr>
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         </section>
       </div>
@@ -247,11 +257,9 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
 import axios from 'axios';
-import AdCard from './components/AdCard.vue';
-import MechanismChart from './components/MechanismChart.vue';
-import { ElMessage } from 'element-plus';
+const MechanismChart = defineAsyncComponent(() => import('./components/MechanismChart.vue'));
 
 const userId = ref('dev_412');
 const mechanism = ref('gsp');
@@ -263,8 +271,27 @@ const candidates = ref([
 ]);
 const results = ref([]);
 const loading = ref(false);
+const errorMessage = ref('');
+const health = ref(null);
+const healthError = ref('');
+const lastLatencyMs = ref(null);
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 
 const hasData = computed(() => results.value.length > 0);
+const backendReady = computed(() => health.value?.status === 'ok');
+const backendStatusLabel = computed(() => {
+  if (healthError.value) return 'Backend unavailable';
+  if (!health.value) return 'Backend unknown';
+  return health.value.status === 'ok' ? 'Backend healthy' : 'Backend degraded';
+});
+const modelStatusLabel = computed(() => {
+  if (!health.value) return 'unknown';
+  return health.value.model_ready ? 'ready' : 'not_ready';
+});
+const latencyLabel = computed(() => {
+  if (typeof lastLatencyMs.value !== 'number') return '--';
+  return `${Math.round(lastLatencyMs.value)}ms`;
+});
 
 const summary = computed(() => {
   if (!results.value.length) {
@@ -292,21 +319,78 @@ const removeCandidate = (index) => {
   candidates.value.splice(index, 1);
 };
 
-const runAuction = async () => {
-  loading.value = true;
+const parseApiError = (error, fallback = 'Request failed') => {
+  const detail = error?.response?.data?.detail;
+  if (detail && typeof detail === 'object') {
+    const code = detail.code ? `[${detail.code}] ` : '';
+    const message = detail.message || fallback;
+    return `${code}${message}`;
+  }
+  if (error?.message) {
+    return error.message;
+  }
+  return fallback;
+};
+
+const fetchHealth = async () => {
   try {
-    const response = await axios.post('http://localhost:8000/recommend', {
-      user_id: userId.value,
-      candidates: candidates.value,
+    const response = await axios.get(`${apiBaseUrl}/healthz`);
+    health.value = response.data;
+    healthError.value = '';
+  } catch (error) {
+    healthError.value = parseApiError(error, 'Failed to load backend status');
+  }
+};
+
+const runAuction = async () => {
+  if (!userId.value.trim()) {
+    errorMessage.value = 'User ID is required';
+    return;
+  }
+  if (candidates.value.length === 0) {
+    errorMessage.value = 'Please add at least one candidate';
+    return;
+  }
+  const ids = new Set();
+  for (const candidate of candidates.value) {
+    if (!candidate.ad_id || !String(candidate.ad_id).trim()) {
+      errorMessage.value = 'Each candidate must have a non-empty ad_id';
+      return;
+    }
+    if (ids.has(candidate.ad_id.trim())) {
+      errorMessage.value = `Duplicate ad_id: ${candidate.ad_id}`;
+      return;
+    }
+    ids.add(candidate.ad_id.trim());
+    if (!Number.isFinite(candidate.bid) || Number(candidate.bid) <= 0) {
+      errorMessage.value = 'Each candidate must have bid > 0';
+      return;
+    }
+  }
+
+  errorMessage.value = '';
+  loading.value = true;
+  const started = performance.now();
+  try {
+    const response = await axios.post(`${apiBaseUrl}/recommend`, {
+      user_id: userId.value.trim(),
+      candidates: candidates.value.map((row) => ({
+        ad_id: String(row.ad_id).trim(),
+        bid: Number(row.bid)
+      })),
       mechanism: mechanism.value
     });
     results.value = response.data.results;
-    ElMessage.success('Auction completed successfully');
+    lastLatencyMs.value = performance.now() - started;
   } catch (error) {
-    console.error(error);
-    ElMessage.error('Failed to run auction: ' + error.message);
+    errorMessage.value = parseApiError(error, 'Failed to run auction');
   } finally {
     loading.value = false;
+    await fetchHealth();
   }
 };
+
+onMounted(async () => {
+  await fetchHealth();
+});
 </script>

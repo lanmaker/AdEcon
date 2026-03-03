@@ -3,8 +3,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, defineProps } from 'vue';
-import * as echarts from 'echarts';
+import { ref, onMounted, onUnmounted, watch, defineProps } from 'vue';
+import { CanvasRenderer } from 'echarts/renderers';
+import { BarChart } from 'echarts/charts';
+import {
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+} from 'echarts/components';
+import { use, init } from 'echarts/core';
+
+use([
+  CanvasRenderer,
+  BarChart,
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+]);
 
 const props = defineProps({
   results: {
@@ -15,16 +30,19 @@ const props = defineProps({
 
 const chartRef = ref(null);
 let chartInstance = null;
+let resizeHandler = null;
 
 const initChart = () => {
   if (chartRef.value) {
-    chartInstance = echarts.init(chartRef.value);
+    chartInstance = init(chartRef.value);
     updateChart();
-    
-    // Handle resize
-    window.addEventListener('resize', () => {
-      chartInstance && chartInstance.resize();
-    });
+
+    resizeHandler = () => {
+      if (chartInstance) {
+        chartInstance.resize();
+      }
+    };
+    window.addEventListener('resize', resizeHandler);
   }
 };
 
@@ -96,6 +114,17 @@ const updateChart = () => {
 
 onMounted(() => {
   initChart();
+});
+
+onUnmounted(() => {
+  if (resizeHandler) {
+    window.removeEventListener('resize', resizeHandler);
+    resizeHandler = null;
+  }
+  if (chartInstance) {
+    chartInstance.dispose();
+    chartInstance = null;
+  }
 });
 
 watch(() => props.results, () => {
